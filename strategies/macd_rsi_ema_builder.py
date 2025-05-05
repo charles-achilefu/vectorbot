@@ -38,7 +38,7 @@ def short_signal(indicators, price):
         (price < ema_21) & (price < ema_55)
     )
 
-class MACDRSIEMAStrategy_Builder:
+class macd_rsi_ema_builder:
     def __init__(self, close: pd.Series):
         self.builder = StrategyBuilder()
         self.builder.add_indicator(IndicatorBlock('macd', macd_block))
@@ -47,11 +47,10 @@ class MACDRSIEMAStrategy_Builder:
         self.builder.add_indicator(IndicatorBlock('ema_55', ema_55_block))
         self.builder.add_signal(SignalBlock('long', long_signal))
         self.builder.add_signal(SignalBlock('short', short_signal))
-        # Removed backtest execution from constructor
         self.indicators = None
         self.signals = None
 
-    def run_backtest(self, close):
+    def run_backtest(self, close: pd.Series):
         self.indicators, self.signals = self.builder.backtest(close)
         return self.indicators, self.signals
 

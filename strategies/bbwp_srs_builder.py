@@ -31,7 +31,7 @@ def short_signal(indicators, price):
     stoch = indicators['stochrsi']
     return (price < ema_9) & (ema_9 < ema_21) & (ema_21 < ema_55) & (stoch < 0.2)
 
-class BBWPSRSStrategy_Builder:
+class bbwp_srs_builder:
     def __init__(self, close: pd.Series):
         self.builder = StrategyBuilder()
         self.builder.add_indicator(IndicatorBlock('bbwp_s', bbwp_s_block))
@@ -41,19 +41,15 @@ class BBWPSRSStrategy_Builder:
         self.builder.add_indicator(IndicatorBlock('ema_55', ema_55_block))
         self.builder.add_signal(SignalBlock('long', long_signal))
         self.builder.add_signal(SignalBlock('short', short_signal))
-        # Removed backtest execution from constructor
         self.indicators = None
         self.signals = None
 
-    def run_backtest(self, close):
+    def run_backtest(self, close: pd.Series):
         self.indicators, self.signals = self.builder.backtest(close)
         return self.indicators, self.signals
 
     def get_signals(self):
         return self.signals
-
-    def get_indicators(self):
-        return self.indicators
 
     def get_indicators(self):
         return self.indicators
