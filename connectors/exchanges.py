@@ -3,28 +3,32 @@ import asyncio
 
 class ExchangeConnector:
     def __init__(self, exchange_name, api_key, api_secret):
-        self.exchange_name = exchange_name
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.exchange = self._init_exchange()
-
-    def _init_exchange(self):
-        exchange_class = getattr(ccxt, self.exchange_name)
-        return exchange_class({
-            'apiKey': self.api_key,
-            'secret': self.api_secret,
-            'enableRateLimit': True
+        exchange_class = getattr(ccxt, exchange_name)
+        self.exchange = exchange_class({
+            'apiKey': api_key,
+            'secret': api_secret,
+            'timeout': 30000,  # 30 second timeout
+            'enableRateLimit': True,
+            'options': {
+                'defaultType': 'future' if 'dapi' in exchange_name else 'spot'
+            }
         })
 
-    async def fetch_ohlcv(self, symbol, timeframe='1h', since=None, limit=1000):
-        return await self.exchange.fetch_ohlcv(symbol, timeframe, since, limit)
-
-    async def create_order(self, symbol, side, amount, order_type='market', price=None, params={}):
-        return await self.exchange.create_order(symbol, order_type, side, amount, price, params)
+    async def fetch_ohlcv(self, symbol, timeframe, limit=500, retries=3):
+        for attempt in range(retries):
+            try:
+                return await self.exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
+            except (ccxt.NetworkError, ccxt.ExchangeError) as e:
+                if attempt == retries - 1:
+                    raise
+                await asyncio.sleep(2 ** attempt)  # exponential backoff
+        return None
 
     async def close(self):
-        await self.exchange.close()
+        if hasattr(self, 'exchange'):
+            await self.exchange.close()
+            del self.exchange
 
 # Example usage:
-# connector = ExchangeConnector('binance', API_BINANCE, SECRET_BINANCE)
+# connector = ExchangeConnector('binance', BINANCE_API_KEY, BINANCE_API_SECRET)
 # ohlcv = asyncio.run(connector.fetch_ohlcv('BTC/USDT'))
