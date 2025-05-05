@@ -1,0 +1,4 @@
+pandas
+vectorbt
+ccxt
+numpy
